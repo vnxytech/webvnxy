@@ -1,15 +1,13 @@
 import os
-import json
-import csv
-import io
-from flask import render_template, redirect, url_for, flash, request, jsonify, abort, send_from_directory
+import uuid
+from datetime import datetime
+from flask import render_template, redirect, url_for, flash, request, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app
-from models import User, UserData
-from forms import LoginForm, CreateUserForm, EditUserForm, UploadFileForm
+from models import User, Image
+from forms import LoginForm, CreateUserForm, EditUserForm, RegenerateKeyForm, UploadImageForm, EditImageForm
 from functools import wraps
-from utils import parse_csv, parse_json
 
 # Admin required decorator
 def admin_required(f):
@@ -34,20 +32,20 @@ def login():
     
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.get_by_username(form.username.data)
+        user = User.get_by_access_key(form.access_key.data)
         
-        if user and user.check_password(form.password.data):
-            if not user.is_active():
+        if user:
+            if not user.get_account_status():
                 flash('Your account is disabled. Please contact an administrator.', 'danger')
                 return redirect(url_for('login'))
                 
             login_user(user, remember=form.remember_me.data)
             next_page = request.args.get('next')
             
-            flash(f'Welcome back, {user.username}!', 'success')
+            flash(f'Welcome, {user.name}!', 'success')
             return redirect(next_page or url_for('dashboard'))
         else:
-            flash('Invalid username or password', 'danger')
+            flash('Invalid access key', 'danger')
     
     return render_template('login.html', form=form)
 
@@ -61,69 +59,104 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    uploads = UserData.get_user_uploads(current_user.id)
-    return render_template('dashboard.html', uploads=uploads)
+    images = Image.get_images()
+    return render_template('dashboard.html', images=images)
+
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    return send_from_directory(os.path.join('data', 'uploads'), filename)
 
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
-def upload():
-    form = UploadFileForm()
+@admin_required
+def upload_image():
+    form = UploadImageForm()
     
     if form.validate_on_submit():
-        uploaded_file = form.file.data
-        if uploaded_file:
-            # Create user directory if it doesn't exist
-            user_dir = os.path.join('data', 'uploads', str(current_user.id))
-            os.makedirs(user_dir, exist_ok=True)
+        image = form.image.data
+        if image:
+            # Create uploads directory if it doesn't exist
+            os.makedirs(os.path.join('data', 'uploads'), exist_ok=True)
             
-            # Save the file
-            filename = secure_filename(uploaded_file.filename)
-            file_path = os.path.join(user_dir, filename)
+            # Generate unique filename
+            filename = str(uuid.uuid4()) + secure_filename(image.filename)
+            file_path = os.path.join('data', 'uploads', filename)
             
-            uploaded_file.save(file_path)
-            flash(f'File {filename} uploaded successfully!', 'success')
-            return redirect(url_for('view_data', file_id=filename))
+            # Save the image file
+            image.save(file_path)
+            
+            # Create image record
+            image_data = {
+                "id": str(uuid.uuid4()),
+                "title": form.title.data,
+                "description": form.description.data,
+                "filename": filename,
+                "uploaded_by": current_user.id,
+                "uploaded_by_name": current_user.name,
+                "uploaded_at": datetime.now().isoformat(),
+                "file_size": os.path.getsize(file_path)
+            }
+            
+            Image.save_image_data(image_data)
+            
+            flash(f'Image "{form.title.data}" uploaded successfully!', 'success')
+            return redirect(url_for('dashboard'))
     
     return render_template('upload.html', form=form)
 
-@app.route('/view/<file_id>')
+@app.route('/image/<image_id>')
 @login_required
-def view_data(file_id):
-    file_path = os.path.join('data', 'uploads', str(current_user.id), file_id)
+def view_image(image_id):
+    image = Image.get_image(image_id)
     
-    if not os.path.exists(file_path):
-        flash('File not found!', 'danger')
+    if not image:
+        flash('Image not found!', 'danger')
         return redirect(url_for('dashboard'))
     
-    data = None
-    columns = []
-    rows = []
-    
-    try:
-        if file_id.endswith('.json'):
-            data = parse_json(file_path)
-        elif file_id.endswith('.csv'):
-            columns, rows = parse_csv(file_path)
-    except Exception as e:
-        flash(f'Error parsing file: {str(e)}', 'danger')
-        return redirect(url_for('dashboard'))
-    
-    return render_template('view_data.html', 
-                          file_id=file_id, 
-                          data=data, 
-                          columns=columns, 
-                          rows=rows,
-                          file_type=file_id.split('.')[-1])
+    return render_template('view_image.html', image=image)
 
-@app.route('/delete/<file_id>', methods=['POST'])
+@app.route('/image/edit/<image_id>', methods=['GET', 'POST'])
 @login_required
-def delete_file(file_id):
-    success = UserData.delete_upload(current_user.id, file_id)
+@admin_required
+def edit_image(image_id):
+    image = Image.get_image(image_id)
+    
+    if not image:
+        flash('Image not found!', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    form = EditImageForm(obj=image)
+    
+    if form.validate_on_submit():
+        data = {
+            'title': form.title.data,
+            'description': form.description.data
+        }
+        
+        success = Image.update_image(image_id, data)
+        
+        if success:
+            flash(f'Image "{form.title.data}" updated successfully!', 'success')
+            return redirect(url_for('view_image', image_id=image_id))
+        else:
+            flash('Error updating image', 'danger')
+    
+    # Pre-fill form data
+    form.title.data = image['title']
+    form.description.data = image['description']
+    
+    return render_template('edit_image.html', form=form, image=image)
+
+@app.route('/image/delete/<image_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_image(image_id):
+    success = Image.delete_image(image_id)
     
     if success:
-        flash(f'File {file_id} deleted successfully', 'success')
+        flash('Image deleted successfully', 'success')
     else:
-        flash('File not found or could not be deleted', 'danger')
+        flash('Image not found or could not be deleted', 'danger')
     
     return redirect(url_for('dashboard'))
 
@@ -141,18 +174,17 @@ def create_user():
     form = CreateUserForm()
     
     if form.validate_on_submit():
-        success, result = User.create(
-            username=form.username.data,
-            password=form.password.data,
+        success, user_id, access_key = User.create(
+            name=form.name.data,
             role=form.role.data,
             active=form.active.data
         )
         
         if success:
-            flash(f'User {form.username.data} created successfully!', 'success')
+            flash(f'User {form.name.data} created successfully with access key: {access_key}', 'success')
             return redirect(url_for('admin_panel'))
         else:
-            flash(f'Error creating user: {result}', 'danger')
+            flash('Error creating user', 'danger')
     
     return render_template('admin.html', create_form=form, active_tab='create')
 
@@ -170,36 +202,55 @@ def edit_user(user_id):
     
     if form.validate_on_submit():
         data = {
-            'username': form.username.data,
+            'name': form.name.data,
             'role': form.role.data,
             'active': form.active.data
         }
-        
-        # Only update password if provided
-        if form.password.data:
-            data['password'] = form.password.data
             
         success = User.update(user_id, data)
         
         if success:
-            flash(f'User {form.username.data} updated successfully!', 'success')
+            flash(f'User {form.name.data} updated successfully!', 'success')
             return redirect(url_for('admin_panel'))
         else:
             flash('Error updating user', 'danger')
     
     # Pre-fill form data
-    form.username.data = user_obj.username
+    form.name.data = user_obj.name
     form.role.data = user_obj.role
-    form.active.data = user_obj.active
+    form.active.data = user_obj.is_account_active
     
     return render_template('admin.html', edit_form=form, user=user_obj, active_tab='edit')
+
+@app.route('/admin/regenerate-key/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def regenerate_key(user_id):
+    user_obj = User.get(user_id)
+    
+    if not user_obj:
+        flash('User not found', 'danger')
+        return redirect(url_for('admin_panel'))
+    
+    form = RegenerateKeyForm()
+    
+    if form.validate_on_submit():
+        success, new_key = User.regenerate_key(user_id)
+        
+        if success:
+            flash(f'New access key generated for {user_obj.name}: {new_key}', 'success')
+            return redirect(url_for('admin_panel'))
+        else:
+            flash('Error generating new access key', 'danger')
+    
+    return render_template('admin.html', regenerate_form=form, user=user_obj, active_tab='regenerate')
 
 @app.route('/admin/delete/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_user(user_id):
     # Prevent admin from deleting themselves
-    if int(user_id) == current_user.id:
+    if int(user_id) == int(current_user.id):
         flash('You cannot delete your own account', 'danger')
         return redirect(url_for('admin_panel'))
     

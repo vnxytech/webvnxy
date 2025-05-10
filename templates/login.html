@@ -1,36 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Login - File Mapper{% endblock %}
+{% block title %}Login - Image Mapper{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 col-lg-5">
         <div class="card">
             <div class="card-header bg-primary text-white text-center">
-                <h4><i class="fas fa-sign-in-alt me-2"></i>Login</h4>
+                <h4><i class="fas fa-key me-2"></i>Access Key Login</h4>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('login') }}">
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-3">
-                        <label for="username" class="form-label">{{ form.username.label }}</label>
-                        {{ form.username(class="form-control", placeholder="Enter your username") }}
-                        {% if form.username.errors %}
+                        <label for="access_key" class="form-label">{{ form.access_key.label }}</label>
+                        {{ form.access_key(class="form-control", placeholder="Enter your access key") }}
+                        {% if form.access_key.errors %}
                             <div class="text-danger">
-                                {% for error in form.username.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="password" class="form-label">{{ form.password.label }}</label>
-                        {{ form.password(class="form-control", placeholder="Enter your password") }}
-                        {% if form.password.errors %}
-                            <div class="text-danger">
-                                {% for error in form.password.errors %}
+                                {% for error in form.access_key.errors %}
                                     <small>{{ error }}</small>
                                 {% endfor %}
                             </div>
@@ -48,7 +36,7 @@
                 </form>
             </div>
             <div class="card-footer text-center text-muted">
-                <small>Default admin: username=admin, password=admin123</small>
+                <small>Admin keys are generated during account creation</small>
             </div>
         </div>
     </div>
