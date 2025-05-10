@@ -1,130 +1,126 @@
-/* Custom CSS styles for File Mapper application */
+/* Custom CSS for Image Mapper Application */
 
-/* Global Styles */
-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.footer {
-    margin-top: auto;
-}
-
-/* Card enhancements */
+/* Additional styling for cards */
 .card {
-    border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 1.5rem;
+    transition: transform 0.2s;
 }
 
-.card-header {
-    border-radius: 0.5rem 0.5rem 0 0 !important;
+.card:hover {
+    transform: translateY(-5px);
 }
 
-/* File Icons */
-.file-icon {
-    font-size: 2rem;
-    margin-right: 0.5rem;
+/* Styling for image thumbnails */
+.card-img-top {
+    object-fit: cover;
+    transition: opacity 0.3s;
 }
 
-.file-icon.json {
-    color: #f1c40f;
+.card-img-top:hover {
+    opacity: 0.9;
 }
 
-.file-icon.csv {
-    color: #2ecc71;
+/* Custom styling for navbar */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+.navbar-brand {
+    font-weight: bold;
 }
 
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+/* Custom footer styling */
+.footer {
+    background-color: var(--bs-dark);
+    border-top: 1px solid var(--bs-gray-700);
 }
 
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+/* Custom styling for forms */
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Data Visualization */
-.data-container {
-    border-radius: 0.25rem;
-}
-
-/* Table enhancements */
-.table thead th {
-    border-top: none;
-    border-bottom-width: 1px;
-}
-
-.table-hover tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Form enhancements */
-.form-control:focus, .form-select:focus {
-    box-shadow: 0 0 0 0.2rem rgba(54, 162, 235, 0.25);
-}
-
-/* Empty state styling */
-.empty-state {
-    padding: 3rem 1rem;
-    text-align: center;
-}
-
-.empty-state i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-}
-
-/* Badges */
+/* Badge styling */
 .badge {
     font-weight: 500;
     padding: 0.35em 0.65em;
 }
 
-/* JSON tree view */
-.json-key {
-    color: #f1c40f;
+/* Modal customization */
+.modal-content {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
-.json-string {
-    color: #e74c3c;
+/* Alert customization */
+.alert {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.json-value {
-    color: #2ecc71;
+/* Custom styling for buttons */
+.btn {
+    font-weight: 500;
 }
 
-/* Animations */
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
+.btn-outline-primary:hover, 
+.btn-outline-secondary:hover,
+.btn-outline-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+/* Code block styling */
+code {
+    padding: 0.2em 0.4em;
+    background-color: var(--bs-gray-800);
+    border-radius: 0.25rem;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .card-body {
-        padding: 1rem;
-    }
-    
-    .table-responsive {
-        max-height: 400px;
-        overflow-y: auto;
-    }
+/* Image preview styling */
+#imagePreview img {
+    max-height: 300px;
+    width: auto;
+    margin: 0 auto;
+    display: block;
+    border-radius: 0.25rem;
+}
+
+/* User role badges */
+.role-badge {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.role-badge.admin {
+    background-color: var(--bs-danger);
+}
+
+.role-badge.user {
+    background-color: var(--bs-primary);
+}
+
+/* Fix table overflow issues */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Custom pagination */
+.page-item.active .page-link {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Access key formatting */
+.access-key {
+    font-family: monospace;
+    letter-spacing: 0.05em;
+    background-color: var(--bs-gray-800);
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
 }

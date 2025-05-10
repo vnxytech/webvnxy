@@ -1,8 +1,8 @@
 [
     {
         "id": 1,
-        "username": "admin",
-        "password": "scrypt:32768:8:1$TXYlC9wb72jNMf6a$c2d1eef0617d815f591c8729180a1c221fe76ace3f0e15827cb52d2d3268661f3e7777636235c390c6701ec27fd9251b50369f339f6532c07ab03bf5c8a3684e",
+        "name": "Admin",
+        "access_key": "123456789abcdefg",
         "role": "admin",
         "active": true,
         "created_at": "2025-05-10T04:42:54.226152"
