@@ -6,7 +6,7 @@
         "role": "admin",
         "active": true,
         "created_at": "2025-05-10T04:42:54.226152",
-        "last_login": null
+        "last_login": "2025-05-10T07:44:54.612258"
     },
     {
         "id": 2,
@@ -15,6 +15,33 @@
         "role": "user",
         "active": true,
         "created_at": "2025-05-10T07:40:00.000000",
+        "last_login": null
+    },
+    {
+        "id": 3,
+        "name": "Viewer 1",
+        "access_key": "viewer123456789",
+        "role": "user",
+        "active": true,
+        "created_at": "2025-05-10T07:45:12.000000",
+        "last_login": null
+    },
+    {
+        "id": 4,
+        "name": "Viewer 2",
+        "access_key": "viewer987654321",
+        "role": "user",
+        "active": true,
+        "created_at": "2025-05-10T07:45:30.000000",
+        "last_login": null
+    },
+    {
+        "id": 5,
+        "name": "Viewer Staff",
+        "access_key": "staff456789012",
+        "role": "user",
+        "active": true,
+        "created_at": "2025-05-10T07:45:45.000000",
         "last_login": null
     }
 ]
