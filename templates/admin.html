@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - File Mapper{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-shield me-2"></i>Admin Panel</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {{ 'active' if not active_tab or active_tab == 'users' else '' }}" 
+                        id="users-tab" data-bs-toggle="tab" data-bs-target="#users-content" 
+                        type="button" role="tab">
+                    <i class="fas fa-users me-1"></i> Manage Users
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {{ 'active' if active_tab == 'create' else '' }}" 
+                        id="create-tab" data-bs-toggle="tab" data-bs-target="#create-content" 
+                        type="button" role="tab">
+                    <i class="fas fa-user-plus me-1"></i> Create User
+                </button>
+            </li>
+            {% if user and active_tab == 'edit' %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" 
+                        id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-content" 
+                        type="button" role="tab">
+                    <i class="fas fa-user-edit me-1"></i> Edit User: {{ user.username }}
+                </button>
+            </li>
+            {% endif %}
+        </ul>
+        
+        <div class="tab-content" id="adminTabsContent">
+            <!-- Users Tab -->
+            <div class="tab-pane fade {{ 'show active' if not active_tab or active_tab == 'users' else '' }}" 
+                 id="users-content" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-users me-2"></i>User Management</h5>
+                            <button class="btn btn-sm btn-primary" onclick="document.getElementById('create-tab').click();">
+                                <i class="fas fa-user-plus me-1"></i> Add New User
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_item in users %}
+                                    <tr>
+                                        <td>{{ user_item.id }}</td>
+                                        <td>{{ user_item.username }}</td>
+                                        <td>
+                                            {% if user_item.role == 'admin' %}
+                                            <span class="badge bg-danger">Admin</span>
+                                            {% else %}
+                                            <span class="badge bg-primary">User</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user_item.active %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user_item.created_at.split('T')[0] }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('edit_user', user_id=user_item.id) }}" class="btn btn-outline-primary">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                {% if user_item.id != current_user.id %}
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteUserModal{{ user_item.id }}">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                                {% else %}
+                                                <button type="button" class="btn btn-outline-danger" disabled>
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Delete User Modal -->
+                                            <div class="modal fade" id="deleteUserModal{{ user_item.id }}" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Confirm Delete</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Are you sure you want to delete user <strong>{{ user_item.username }}</strong>?</p>
+                                                            <p class="text-danger">This action cannot be undone and all user data will be lost.</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <form action="{{ url_for('delete_user', user_id=user_item.id) }}" method="POST">
+                                                                <button type="submit" class="btn btn-danger">Delete User</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Create User Tab -->
+            <div class="tab-pane fade {{ 'show active' if active_tab == 'create' else '' }}" 
+                 id="create-content" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-user-plus me-2"></i>Create New User</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('create_user') }}">
+                            {{ create_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">{{ create_form.username.label }}</label>
+                                {{ create_form.username(class="form-control", placeholder="Enter username") }}
+                                {% if create_form.username.errors %}
+                                    <div class="text-danger">
+                                        {% for error in create_form.username.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">{{ create_form.password.label }}</label>
+                                {{ create_form.password(class="form-control", placeholder="Enter password") }}
+                                {% if create_form.password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in create_form.password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">{{ create_form.confirm_password.label }}</label>
+                                {{ create_form.confirm_password(class="form-control", placeholder="Confirm password") }}
+                                {% if create_form.confirm_password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in create_form.confirm_password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="role" class="form-label">{{ create_form.role.label }}</label>
+                                {{ create_form.role(class="form-select") }}
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                {{ create_form.active(class="form-check-input") }}
+                                <label class="form-check-label" for="active">{{ create_form.active.label }}</label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="document.getElementById('users-tab').click();">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Users
+                                </button>
+                                {{ create_form.submit(class="btn btn-success") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Edit User Tab -->
+            {% if user and active_tab == 'edit' %}
+            <div class="tab-pane fade show active" id="edit-content" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-user-edit me-2"></i>Edit User: {{ user.username }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
+                            {{ edit_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">{{ edit_form.username.label }}</label>
+                                {{ edit_form.username(class="form-control") }}
+                                {% if edit_form.username.errors %}
+                                    <div class="text-danger">
+                                        {% for error in edit_form.username.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">{{ edit_form.password.label }} <small class="text-muted">(Leave blank to keep current password)</small></label>
+                                {{ edit_form.password(class="form-control", placeholder="Enter new password") }}
+                                {% if edit_form.password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in edit_form.password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">{{ edit_form.confirm_password.label }}</label>
+                                {{ edit_form.confirm_password(class="form-control", placeholder="Confirm new password") }}
+                                {% if edit_form.confirm_password.errors %}
+                                    <div class="text-danger">
+                                        {% for error in edit_form.confirm_password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="role" class="form-label">{{ edit_form.role.label }}</label>
+                                {{ edit_form.role(class="form-select") }}
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                {{ edit_form.active(class="form-check-input") }}
+                                <label class="form-check-label" for="active">{{ edit_form.active.label }}</label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="document.getElementById('users-tab').click();">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Users
+                                </button>
+                                {{ edit_form.submit(class="btn btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

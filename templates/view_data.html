@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}View Data - File Mapper{% endblock %}
+
+{% block extra_css %}
+<style>
+    .json-key { color: #f1c40f; }
+    .json-value { color: #2ecc71; }
+    .json-string { color: #e74c3c; }
+    
+    .data-container {
+        min-height: 400px;
+        max-height: 600px;
+        overflow: auto;
+    }
+    
+    #visualizationContainer {
+        min-height: 400px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-eye me-2"></i>Data Viewer</h2>
+            <div>
+                <button class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fas fa-trash me-1"></i> Delete
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-{% if file_type == 'json' %}code{% elif file_type == 'csv' %}csv{% else %}alt{% endif %} me-2"></i>
+                        {{ file_id }}
+                    </h5>
+                    <div class="badge {% if file_type == 'json' %}bg-info{% elif file_type == 'csv' %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ file_type.upper() }}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3" id="dataTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="visualization-tab" data-bs-toggle="tab" data-bs-target="#visualization" 
+                                type="button" role="tab">
+                            <i class="fas fa-chart-bar me-1"></i> Visualization
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="raw-data-tab" data-bs-toggle="tab" data-bs-target="#raw-data" 
+                                type="button" role="tab">
+                            <i class="fas fa-code me-1"></i> Raw Data
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="dataTabsContent">
+                    <!-- Visualization Tab -->
+                    <div class="tab-pane fade show active" id="visualization" role="tabpanel">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div id="visualizationContainer">
+                                    {% if file_type == 'csv' %}
+                                        <!-- Table visualization for CSV -->
+                                        {% if columns and rows %}
+                                            <div class="table-responsive">
+                                                <table class="table table-hover table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            {% for column in columns %}
+                                                            <th>{{ column }}</th>
+                                                            {% endfor %}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for row in rows %}
+                                                        <tr>
+                                                            {% for cell in row %}
+                                                            <td>{{ cell }}</td>
+                                                            {% endfor %}
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="mt-3">
+                                                <canvas id="csvChart"></canvas>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-warning">No data found or invalid CSV format.</div>
+                                        {% endif %}
+                                    {% elif file_type == 'json' %}
+                                        <!-- JSON visualization -->
+                                        {% if data %}
+                                            <div id="jsonVisContainer">
+                                                <div class="mb-3">
+                                                    <canvas id="jsonChart"></canvas>
+                                                </div>
+                                                <div id="jsonTree" class="border rounded p-3 bg-dark"></div>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-warning">No data found or invalid JSON format.</div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-info">Visualization not available for this file type.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Raw Data Tab -->
+                    <div class="tab-pane fade" id="raw-data" role="tabpanel">
+                        <div class="card bg-dark data-container">
+                            <div class="card-body">
+                                {% if file_type == 'json' and data %}
+                                    <pre><code id="jsonData"></code></pre>
+                                {% elif file_type == 'csv' and columns %}
+                                    <pre><code>{{ columns|join(',') }}
+{% for row in rows %}{{ row|join(',') }}
+{% endfor %}</code></pre>
+                                {% else %}
+                                    <p class="text-muted">No data available to display.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>{{ file_id }}</strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_file', file_id=file_id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if file_type == 'json' and data %}
+        // Prepare JSON data for visualization
+        const jsonData = {{ data|tojson }};
+        
+        // Format JSON for display
+        const jsonStr = JSON.stringify(jsonData, null, 2);
+        document.getElementById('jsonData').textContent = jsonStr;
+        
+        // Create JSON tree view
+        renderJsonTree(jsonData, 'jsonTree');
+        
+        // Create visualization if data is suitable
+        if (Array.isArray(jsonData) && jsonData.length > 0) {
+            createJsonChart(jsonData, 'jsonChart');
+        } else if (typeof jsonData === 'object' && jsonData !== null) {
+            createObjectStructureChart(jsonData, 'jsonChart');
+        }
+    {% endif %}
+    
+    {% if file_type == 'csv' and columns and rows %}
+        // Create chart for CSV data
+        createCsvChart({{ columns|tojson }}, {{ rows|tojson }}, 'csvChart');
+    {% endif %}
+});
+
+// Function to render JSON tree view
+function renderJsonTree(data, targetId) {
+    const container = document.getElementById(targetId);
+    container.innerHTML = '';
+    
+    function createTreeNode(key, value, isRoot = false) {
+        const div = document.createElement('div');
+        div.style.marginLeft = isRoot ? '0' : '20px';
+        div.style.marginBottom = '5px';
+        
+        const keySpan = document.createElement('span');
+        keySpan.className = 'json-key';
+        keySpan.textContent = key ? `"${key}": ` : '';
+        
+        div.appendChild(keySpan);
+        
+        if (value === null) {
+            const nullSpan = document.createElement('span');
+            nullSpan.className = 'json-value';
+            nullSpan.textContent = 'null';
+            div.appendChild(nullSpan);
+        } else if (typeof value === 'object') {
+            // Object or Array
+            const isArray = Array.isArray(value);
+            const openBracket = document.createElement('span');
+            openBracket.textContent = isArray ? '[' : '{';
+            div.appendChild(openBracket);
+            
+            const childrenDiv = document.createElement('div');
+            childrenDiv.style.display = 'block';
+            
+            if (Object.keys(value).length > 0) {
+                for (const [childKey, childValue] of Object.entries(value)) {
+                    childrenDiv.appendChild(createTreeNode(childKey, childValue));
+                }
+            } else {
+                const emptySpan = document.createElement('span');
+                emptySpan.className = 'text-muted';
+                emptySpan.style.marginLeft = '20px';
+                emptySpan.textContent = isArray ? 'Empty array' : 'Empty object';
+                childrenDiv.appendChild(emptySpan);
+            }
+            
+            div.appendChild(childrenDiv);
+            
+            const closeBracket = document.createElement('span');
+            closeBracket.textContent = isArray ? ']' : '}';
+            div.appendChild(closeBracket);
+        } else if (typeof value === 'string') {
+            const strSpan = document.createElement('span');
+            strSpan.className = 'json-string';
+            strSpan.textContent = `"${value}"`;
+            div.appendChild(strSpan);
+        } else {
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'json-value';
+            valueSpan.textContent = value;
+            div.appendChild(valueSpan);
+        }
+        
+        return div;
+    }
+    
+    if (Array.isArray(data)) {
+        const root = createTreeNode('', data, true);
+        container.appendChild(root);
+    } else if (typeof data === 'object' && data !== null) {
+        const root = createTreeNode('', data, true);
+        container.appendChild(root);
+    } else {
+        const div = document.createElement('div');
+        div.textContent = 'Invalid data format';
+        container.appendChild(div);
+    }
+}
+
+// Function to create chart for JSON array data
+function createJsonChart(data, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    
+    // Check if data is suitable for charting
+    if (!Array.isArray(data) || data.length === 0) {
+        return;
+    }
+    
+    // Try to extract chartable data
+    let labels = [];
+    let values = [];
+    
+    // Check if array contains objects with consistent keys
+    const firstItem = data[0];
+    if (typeof firstItem === 'object' && firstItem !== null) {
+        const keys = Object.keys(firstItem);
+        
+        // Look for potential label and value fields
+        let labelField = keys.find(k => k.toLowerCase().includes('name') || k.toLowerCase().includes('label'));
+        let valueField = keys.find(k => k.toLowerCase().includes('value') || k.toLowerCase().includes('count'));
+        
+        // If no obvious fields, use first string field as label and first number field as value
+        if (!labelField) {
+            labelField = keys.find(k => typeof firstItem[k] === 'string');
+        }
+        
+        if (!valueField) {
+            valueField = keys.find(k => typeof firstItem[k] === 'number');
+        }
+        
+        // Extract data if we found suitable fields
+        if (labelField && valueField) {
+            labels = data.map(item => item[labelField]);
+            values = data.map(item => item[valueField]);
+        } else if (labelField) {
+            // If only label field found, count occurrences
+            labels = [...new Set(data.map(item => item[labelField]))];
+            values = labels.map(label => 
+                data.filter(item => item[labelField] === label).length
+            );
+        } else {
+            // Fallback: use indices as labels
+            labels = data.map((_, i) => `Item ${i+1}`);
+            
+            // Try to use a numeric field for values
+            const numericField = keys.find(k => typeof firstItem[k] === 'number');
+            if (numericField) {
+                values = data.map(item => item[numericField]);
+            } else {
+                // Count items by some property
+                const firstStrField = keys.find(k => typeof firstItem[k] === 'string');
+                if (firstStrField) {
+                    const uniqueValues = [...new Set(data.map(item => item[firstStrField]))];
+                    labels = uniqueValues;
+                    values = uniqueValues.map(val => 
+                        data.filter(item => item[firstStrField] === val).length
+                    );
+                } else {
+                    // Last resort: just count array length
+                    labels = ['Total items'];
+                    values = [data.length];
+                }
+            }
+        }
+    } else if (typeof firstItem === 'number') {
+        // Simple array of numbers
+        labels = data.map((_, i) => `Item ${i+1}`);
+        values = data;
+    } else if (typeof firstItem === 'string') {
+        // Count occurrences of each string
+        const counts = {};
+        data.forEach(item => {
+            counts[item] = (counts[item] || 0) + 1;
+        });
+        labels = Object.keys(counts);
+        values = Object.values(counts);
+    }
+    
+    // Create chart
+    if (labels.length > 0 && values.length > 0) {
+        // Choose chart type based on data
+        const chartType = labels.length > 10 ? 'bar' : 'pie';
+        
+        new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Data Visualization',
+                    data: values,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(199, 199, 199, 0.7)',
+                        'rgba(83, 102, 255, 0.7)',
+                        'rgba(40, 159, 64, 0.7)',
+                        'rgba(210, 199, 199, 0.7)'
+                    ],
+                    borderColor: 'rgba(255, 255, 255, 0.7)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Data Visualization',
+                        color: '#fff'
+                    },
+                    legend: {
+                        display: chartType === 'pie',
+                        position: 'right',
+                        labels: {
+                            color: '#fff'
+                        }
+                    }
+                },
+                scales: chartType === 'bar' ? {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#fff',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                } : {}
+            }
+        });
+    }
+}
+
+// Function to create chart for object structure
+function createObjectStructureChart(data, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    
+    // Extract data about object structure
+    const countTypes = (obj, path = '') => {
+        const types = {};
+        
+        for (const [key, value] of Object.entries(obj)) {
+            const currentPath = path ? `${path}.${key}` : key;
+            const type = Array.isArray(value) ? 'array' : typeof value;
+            
+            if (type === 'object' && value !== null) {
+                // Count nested objects and arrays
+                const nestedTypes = countTypes(value, currentPath);
+                for (const [nestedType, count] of Object.entries(nestedTypes)) {
+                    types[nestedType] = (types[nestedType] || 0) + count;
+                }
+                types[type] = (types[type] || 0) + 1;
+            } else {
+                types[type] = (types[type] || 0) + 1;
+            }
+        }
+        
+        return types;
+    };
+    
+    const typeCounts = countTypes(data);
+    const labels = Object.keys(typeCounts);
+    const values = Object.values(typeCounts);
+    
+    // Create pie chart to show distribution of data types
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+            datasets: [{
+                data: values,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)'
+                ],
+                borderColor: 'rgba(255, 255, 255, 0.7)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Data Structure Overview',
+                    color: '#fff'
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#fff'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Function to create chart for CSV data
+function createCsvChart(columns, rows, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    
+    // Skip chart if no data
+    if (columns.length === 0 || rows.length === 0) {
+        return;
+    }
+    
+    // Try to find numeric columns for charting
+    const numericColumns = [];
+    const possibleLabelColumns = [];
+    
+    // Check each column if it contains mostly numeric values
+    for (let i = 0; i < columns.length; i++) {
+        let numericCount = 0;
+        
+        for (let j = 0; j < rows.length; j++) {
+            if (rows[j][i] && !isNaN(parseFloat(rows[j][i]))) {
+                numericCount++;
+            }
+        }
+        
+        // If more than 80% values are numeric, consider it a numeric column
+        if (numericCount > 0.8 * rows.length) {
+            numericColumns.push(i);
+        } else {
+            possibleLabelColumns.push(i);
+        }
+    }
+    
+    // Choose chart type based on data
+    if (numericColumns.length > 0) {
+        let labels = [];
+        let datasets = [];
+        
+        // If we have both label and numeric columns
+        if (possibleLabelColumns.length > 0) {
+            // Use first non-numeric column as labels
+            const labelCol = possibleLabelColumns[0];
+            labels = rows.map(row => row[labelCol]);
+            
+            // Create datasets for each numeric column
+            numericColumns.forEach(colIndex => {
+                datasets.push({
+                    label: columns[colIndex],
+                    data: rows.map(row => parseFloat(row[colIndex])),
+                    backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`,
+                    borderColor: 'rgba(255, 255, 255, 0.7)',
+                    borderWidth: 1
+                });
+            });
+        } else {
+            // If all columns are numeric, use row numbers as labels
+            labels = rows.map((_, i) => `Row ${i+1}`);
+            
+            // Use first numeric column
+            datasets.push({
+                label: columns[numericColumns[0]],
+                data: rows.map(row => parseFloat(row[numericColumns[0]])),
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(255, 255, 255, 0.7)',
+                borderWidth: 1
+            });
+        }
+        
+        // Limit number of labels shown
+        if (labels.length > 20) {
+            const interval = Math.ceil(labels.length / 20);
+            labels = labels.filter((_, i) => i % interval === 0);
+            datasets.forEach(ds => {
+                ds.data = ds.data.filter((_, i) => i % interval === 0);
+            });
+        }
+        
+        // Create chart
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Data Visualization',
+                        color: '#fff'
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#fff'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#fff',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // No suitable numeric data found
+        const div = document.createElement('div');
+        div.className = 'alert alert-info';
+        div.textContent = 'No suitable numeric data found for chart visualization.';
+        canvas.parentNode.replaceChild(div, canvas);
+    }
+}
+</script>
+{% endblock %}
