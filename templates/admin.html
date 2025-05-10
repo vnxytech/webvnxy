@@ -11,6 +11,90 @@
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie me-2"></i>Admin Dashboard</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h1 class="display-4">{{ users|length }}</h1>
+                                <p class="mb-0">Total Users</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h1 class="display-4">{{ users|selectattr('active', 'equalto', true)|list|length }}</h1>
+                                <p class="mb-0">Active Users</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h1 class="display-4">{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</h1>
+                                <p class="mb-0">Admins</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h1 class="display-4">{{ users|selectattr('role', 'equalto', 'user')|list|length }}</h1>
+                                <p class="mb-0">Regular Users</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <h6><i class="fas fa-history me-2"></i>Recent User Logins</h6>
+                        {% if recent_logins %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Login Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for login in recent_logins %}
+                                    <tr>
+                                        <td>{{ login.name }}</td>
+                                        <td>
+                                            {% if login.role == 'admin' %}
+                                            <span class="badge bg-danger">Admin</span>
+                                            {% else %}
+                                            <span class="badge bg-primary">User</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ login.last_login.split('T')[0] }} {{ login.last_login.split('T')[1][:8] }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No login activity recorded yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">

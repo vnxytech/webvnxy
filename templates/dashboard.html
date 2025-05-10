@@ -16,6 +16,24 @@
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert {% if current_user.is_admin() %}alert-danger{% else %}alert-info{% endif %}">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas {% if current_user.is_admin() %}fa-user-shield{% else %}fa-user{% endif %} fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1">Welcome, {{ current_user.name }}!</h5>
+                    <p class="mb-0">
+                        You are logged in as a{% if current_user.is_admin() %}n admin user. You can upload, edit, and delete images, as well as manage user accounts.{% else %} regular user. You can view all images in the collection.{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">

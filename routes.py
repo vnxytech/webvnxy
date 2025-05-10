@@ -167,7 +167,13 @@ def delete_image(image_id):
 @admin_required
 def admin_panel():
     users = User.get_users()
-    return render_template('admin.html', users=users)
+    
+    # Get recent logins (users with last_login value, sorted by last_login)
+    recent_logins = [user for user in users if user.get('last_login')]
+    recent_logins.sort(key=lambda x: x.get('last_login', ''), reverse=True)
+    recent_logins = recent_logins[:5]  # Get only 5 most recent
+    
+    return render_template('admin.html', users=users, recent_logins=recent_logins)
 
 @app.route('/admin/create', methods=['GET', 'POST'])
 @login_required
