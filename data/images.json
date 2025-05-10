@@ -1,32 +1,12 @@
 [
     {
-        "id": "f4b3d75c-f6e4-49f6-b228-26d18bd3866b",
-        "title": "Sunset View",
-        "description": "Beautiful sunset view over the mountains with vibrant orange and purple colors.",
-        "filename": "sunset.jpg",
+        "id": "3bcbf6c8-4a00-49b5-90fc-7f7228e5f235",
+        "title": "XRPUSDT",
+        "description": "AREA ENTRY",
+        "filename": "47374af9-1a80-4fba-a8a8-5305c7bc5ebeWhatsApp_Image_2025-05-10_at_15.03.37_5f460e67.jpg",
         "uploaded_by": 1,
         "uploaded_by_name": "Admin",
-        "uploaded_at": "2025-05-10T07:30:00.000000",
-        "file_size": 245678
-    },
-    {
-        "id": "a8c7b692-e231-42f1-9685-16c298fe7a53",
-        "title": "Urban Skyline",
-        "description": "Modern city skyline with tall skyscrapers at night showing sparkling lights.",
-        "filename": "skyline.jpg",
-        "uploaded_by": 1,
-        "uploaded_by_name": "Admin",
-        "uploaded_at": "2025-05-10T07:32:15.000000",
-        "file_size": 358912
-    },
-    {
-        "id": "c6e9d47a-f1b3-4d89-9c72-8e23f2a75b91",
-        "title": "Forest Path",
-        "description": "Serene walking path through a dense forest with sunlight filtering through the trees.",
-        "filename": "forest.jpg",
-        "uploaded_by": 1,
-        "uploaded_by_name": "Admin",
-        "uploaded_at": "2025-05-10T07:35:22.000000",
-        "file_size": 412045
+        "uploaded_at": "2025-05-10T08:11:11.773466",
+        "file_size": 66589
     }
 ]

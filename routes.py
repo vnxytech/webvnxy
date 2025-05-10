@@ -173,7 +173,11 @@ def admin_panel():
     recent_logins.sort(key=lambda x: x.get('last_login', ''), reverse=True)
     recent_logins = recent_logins[:5]  # Get only 5 most recent
     
-    return render_template('admin.html', users=users, recent_logins=recent_logins)
+    # Create forms needed for the admin panel
+    create_form = CreateUserForm()
+    
+    return render_template('admin.html', users=users, recent_logins=recent_logins, 
+                          create_form=create_form)
 
 @app.route('/admin/create', methods=['GET', 'POST'])
 @login_required
