@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Upload File - File Mapper{% endblock %}
+{% block title %}Upload Image - Image Mapper{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-upload me-2"></i>Upload File</h2>
+            <h2><i class="fas fa-upload me-2"></i>Upload Image</h2>
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
             </a>
@@ -18,46 +18,66 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5><i class="fas fa-file-upload me-2"></i>Upload New File</h5>
+                <h5><i class="fas fa-image me-2"></i>Upload New Image</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ url_for('upload_image') }}" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-3">
-                        <label for="file" class="form-label">Select File to Upload</label>
+                        <label for="title" class="form-label">{{ form.title.label }}</label>
+                        {{ form.title(class="form-control", placeholder="Enter image title") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description(class="form-control", rows=3, placeholder="Enter image description") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">{{ form.image.label }}</label>
                         <div class="input-group">
-                            {{ form.file(class="form-control", id="fileInput") }}
-                            <button class="btn btn-outline-secondary" type="button" id="clearFileBtn">
+                            {{ form.image(class="form-control", id="imageInput") }}
+                            <button class="btn btn-outline-secondary" type="button" id="clearImageBtn">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
-                        {% if form.file.errors %}
+                        {% if form.image.errors %}
                             <div class="text-danger">
-                                {% for error in form.file.errors %}
+                                {% for error in form.image.errors %}
                                     <small>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         <div class="form-text">
-                            Supported file types: JSON, CSV
+                            Supported image types: JPG, PNG, GIF
                         </div>
                     </div>
                     
-                    <div id="filePreview" class="mb-3 d-none">
+                    <div id="imagePreview" class="mb-3 d-none">
                         <div class="card bg-light">
                             <div class="card-header">
-                                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>File Preview</h6>
+                                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Image Preview</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-file fa-2x me-2" id="fileIcon"></i>
-                                    <div>
-                                        <h6 id="fileName" class="mb-0"></h6>
-                                        <small id="fileInfo" class="text-muted"></small>
-                                    </div>
+                            <div class="card-body text-center">
+                                <img id="previewImg" src="" alt="Preview" class="img-fluid mb-2" style="max-height: 300px;">
+                                <div>
+                                    <small id="imageInfo" class="text-muted"></small>
                                 </div>
-                                <div id="fileContent" class="border rounded p-2 bg-dark overflow-auto" style="max-height: 200px"></div>
                             </div>
                         </div>
                     </div>
@@ -76,20 +96,21 @@
                 <h5><i class="fas fa-info-circle me-2"></i>Upload Information</h5>
             </div>
             <div class="card-body">
-                <h6>Supported File Types</h6>
+                <h6>Supported Image Types</h6>
                 <ul>
-                    <li><strong>JSON</strong>: For structured data in JavaScript Object Notation</li>
-                    <li><strong>CSV</strong>: For tabular data in Comma-Separated Values format</li>
+                    <li><strong>JPG/JPEG</strong>: For photographs and complex images</li>
+                    <li><strong>PNG</strong>: For images that need transparency</li>
+                    <li><strong>GIF</strong>: For simple animations</li>
                 </ul>
                 
                 <h6 class="mt-3">What happens after upload?</h6>
-                <p>Your file will be processed and mapped onto a visualization. You'll be able to see the data structure and explore it visually.</p>
+                <p>Your image will be stored and displayed on the dashboard. Users will be able to view it, while administrators can edit or delete it.</p>
                 
-                <h6 class="mt-3">File Requirements</h6>
+                <h6 class="mt-3">Upload Requirements</h6>
                 <ul>
-                    <li>JSON files must be valid JSON format</li>
-                    <li>CSV files should be properly formatted with headers</li>
+                    <li>Images must be in JPG, PNG, or GIF format</li>
                     <li>Maximum file size: 5MB</li>
+                    <li>Provide a descriptive title and optional description</li>
                 </ul>
             </div>
         </div>
@@ -100,79 +121,38 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('fileInput');
-    const clearFileBtn = document.getElementById('clearFileBtn');
-    const filePreview = document.getElementById('filePreview');
-    const fileName = document.getElementById('fileName');
-    const fileInfo = document.getElementById('fileInfo');
-    const fileContent = document.getElementById('fileContent');
-    const fileIcon = document.getElementById('fileIcon');
+    const imageInput = document.getElementById('imageInput');
+    const clearImageBtn = document.getElementById('clearImageBtn');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const imageInfo = document.getElementById('imageInfo');
     
-    // Handle file selection
-    fileInput.addEventListener('change', function(e) {
+    // Handle image selection
+    imageInput.addEventListener('change', function(e) {
         if (this.files && this.files[0]) {
             const file = this.files[0];
             
-            // Update file info
-            fileName.textContent = file.name;
-            fileInfo.textContent = `${(file.size / 1024).toFixed(1)} KB, Last modified: ${new Date(file.lastModified).toLocaleDateString()}`;
+            // Update image info
+            imageInfo.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
             
-            // Set appropriate icon
-            fileIcon.className = 'fas fa-2x me-2';
-            if (file.name.endsWith('.json')) {
-                fileIcon.classList.add('fa-file-code');
-                fileIcon.style.color = '#f1c40f';
-            } else if (file.name.endsWith('.csv')) {
-                fileIcon.classList.add('fa-file-csv');
-                fileIcon.style.color = '#2ecc71';
-            } else {
-                fileIcon.classList.add('fa-file');
-                fileIcon.style.color = '#3498db';
-            }
-            
-            // Read file content for preview
+            // Create preview
             const reader = new FileReader();
             reader.onload = function(event) {
-                let content = event.target.result;
-                
-                // Format content based on file type
-                if (file.name.endsWith('.json')) {
-                    try {
-                        const jsonObj = JSON.parse(content);
-                        content = JSON.stringify(jsonObj, null, 2);
-                        fileContent.innerHTML = `<pre class="m-0"><code>${escapeHtml(content)}</code></pre>`;
-                    } catch (e) {
-                        fileContent.innerHTML = `<div class="text-danger">Invalid JSON: ${e.message}</div>`;
-                    }
-                } else if (file.name.endsWith('.csv')) {
-                    fileContent.innerHTML = `<pre class="m-0"><code>${escapeHtml(content)}</code></pre>`;
-                } else {
-                    fileContent.textContent = 'Preview not available for this file type.';
-                }
+                previewImg.src = event.target.result;
+                imagePreview.classList.remove('d-none');
             };
             
-            reader.readAsText(file);
-            filePreview.classList.remove('d-none');
+            reader.readAsDataURL(file);
         } else {
-            filePreview.classList.add('d-none');
+            imagePreview.classList.add('d-none');
         }
     });
     
-    // Clear file input
-    clearFileBtn.addEventListener('click', function() {
-        fileInput.value = '';
-        filePreview.classList.add('d-none');
+    // Clear image input
+    clearImageBtn.addEventListener('click', function() {
+        imageInput.value = '';
+        imagePreview.classList.add('d-none');
     });
-    
-    // Helper function to escape HTML for safe display
-    function escapeHtml(unsafe) {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
 });
 </script>
 {% endblock %}

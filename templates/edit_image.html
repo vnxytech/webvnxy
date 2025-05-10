@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Image - Image Mapper{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-edit me-2"></i>Edit Image</h2>
+            <div>
+                <a href="{{ url_for('view_image', image_id=image.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Image
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-pen me-2"></i>Edit Image Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_image', image_id=image.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">{{ form.title.label }}</label>
+                        {{ form.title(class="form-control", placeholder="Enter image title") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description(class="form-control", rows=5, placeholder="Enter image description") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-image me-2"></i>Current Image</h5>
+            </div>
+            <div class="card-body">
+                <img src="{{ image.url }}" class="img-fluid rounded mb-3" alt="{{ image.title }}">
+                
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Uploaded By</dt>
+                    <dd class="col-sm-8">{{ image.uploaded_by_name }}</dd>
+                    
+                    <dt class="col-sm-4">Upload Date</dt>
+                    <dd class="col-sm-8">{{ image.uploaded_at.split('T')[0] }}</dd>
+                    
+                    <dt class="col-sm-4">File Size</dt>
+                    <dd class="col-sm-8">{{ (image.file_size / 1024)|round(1) }} KB</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

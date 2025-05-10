@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Panel - File Mapper{% endblock %}
+{% block title %}Admin Panel - Image Mapper{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -33,7 +33,16 @@
                 <button class="nav-link active" 
                         id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-content" 
                         type="button" role="tab">
-                    <i class="fas fa-user-edit me-1"></i> Edit User: {{ user.username }}
+                    <i class="fas fa-user-edit me-1"></i> Edit User: {{ user.name }}
+                </button>
+            </li>
+            {% endif %}
+            {% if user and active_tab == 'regenerate' %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" 
+                        id="regenerate-tab" data-bs-toggle="tab" data-bs-target="#regenerate-content" 
+                        type="button" role="tab">
+                    <i class="fas fa-key me-1"></i> Regenerate Key: {{ user.name }}
                 </button>
             </li>
             {% endif %}
@@ -58,7 +67,8 @@
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Username</th>
+                                        <th>Name</th>
+                                        <th>Access Key</th>
                                         <th>Role</th>
                                         <th>Status</th>
                                         <th>Created</th>
@@ -69,7 +79,14 @@
                                     {% for user_item in users %}
                                     <tr>
                                         <td>{{ user_item.id }}</td>
-                                        <td>{{ user_item.username }}</td>
+                                        <td>{{ user_item.name }}</td>
+                                        <td>
+                                            <code>{{ user_item.access_key[:6] }}******</code>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAccessKey('key-{{ user_item.id }}')">
+                                                <i class="fas fa-eye" id="key-icon-{{ user_item.id }}"></i>
+                                            </button>
+                                            <span id="key-{{ user_item.id }}" class="d-none">{{ user_item.access_key }}</span>
+                                        </td>
                                         <td>
                                             {% if user_item.role == 'admin' %}
                                             <span class="badge bg-danger">Admin</span>
@@ -89,6 +106,9 @@
                                             <div class="btn-group btn-group-sm">
                                                 <a href="{{ url_for('edit_user', user_id=user_item.id) }}" class="btn btn-outline-primary">
                                                     <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <a href="{{ url_for('regenerate_key', user_id=user_item.id) }}" class="btn btn-outline-info">
+                                                    <i class="fas fa-key"></i> New Key
                                                 </a>
                                                 {% if user_item.id != current_user.id %}
                                                 <button type="button" class="btn btn-outline-danger" 
@@ -112,7 +132,7 @@
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            <p>Are you sure you want to delete user <strong>{{ user_item.username }}</strong>?</p>
+                                                            <p>Are you sure you want to delete user <strong>{{ user_item.name }}</strong>?</p>
                                                             <p class="text-danger">This action cannot be undone and all user data will be lost.</p>
                                                         </div>
                                                         <div class="modal-footer">
@@ -146,35 +166,11 @@
                             {{ create_form.hidden_tag() }}
                             
                             <div class="mb-3">
-                                <label for="username" class="form-label">{{ create_form.username.label }}</label>
-                                {{ create_form.username(class="form-control", placeholder="Enter username") }}
-                                {% if create_form.username.errors %}
+                                <label for="name" class="form-label">{{ create_form.name.label }}</label>
+                                {{ create_form.name(class="form-control", placeholder="Enter name") }}
+                                {% if create_form.name.errors %}
                                     <div class="text-danger">
-                                        {% for error in create_form.username.errors %}
-                                            <small>{{ error }}</small>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="password" class="form-label">{{ create_form.password.label }}</label>
-                                {{ create_form.password(class="form-control", placeholder="Enter password") }}
-                                {% if create_form.password.errors %}
-                                    <div class="text-danger">
-                                        {% for error in create_form.password.errors %}
-                                            <small>{{ error }}</small>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="confirm_password" class="form-label">{{ create_form.confirm_password.label }}</label>
-                                {{ create_form.confirm_password(class="form-control", placeholder="Confirm password") }}
-                                {% if create_form.confirm_password.errors %}
-                                    <div class="text-danger">
-                                        {% for error in create_form.confirm_password.errors %}
+                                        {% for error in create_form.name.errors %}
                                             <small>{{ error }}</small>
                                         {% endfor %}
                                     </div>
@@ -189,6 +185,10 @@
                             <div class="mb-3 form-check">
                                 {{ create_form.active(class="form-check-input") }}
                                 <label class="form-check-label" for="active">{{ create_form.active.label }}</label>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> A random access key will be generated for this user. You'll be able to see it once the user is created.
                             </div>
                             
                             <div class="d-flex justify-content-between">
@@ -207,18 +207,18 @@
             <div class="tab-pane fade show active" id="edit-content" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="fas fa-user-edit me-2"></i>Edit User: {{ user.username }}</h5>
+                        <h5><i class="fas fa-user-edit me-2"></i>Edit User: {{ user.name }}</h5>
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
                             {{ edit_form.hidden_tag() }}
                             
                             <div class="mb-3">
-                                <label for="username" class="form-label">{{ edit_form.username.label }}</label>
-                                {{ edit_form.username(class="form-control") }}
-                                {% if edit_form.username.errors %}
+                                <label for="name" class="form-label">{{ edit_form.name.label }}</label>
+                                {{ edit_form.name(class="form-control") }}
+                                {% if edit_form.name.errors %}
                                     <div class="text-danger">
-                                        {% for error in edit_form.username.errors %}
+                                        {% for error in edit_form.name.errors %}
                                             <small>{{ error }}</small>
                                         {% endfor %}
                                     </div>
@@ -226,27 +226,16 @@
                             </div>
                             
                             <div class="mb-3">
-                                <label for="password" class="form-label">{{ edit_form.password.label }} <small class="text-muted">(Leave blank to keep current password)</small></label>
-                                {{ edit_form.password(class="form-control", placeholder="Enter new password") }}
-                                {% if edit_form.password.errors %}
-                                    <div class="text-danger">
-                                        {% for error in edit_form.password.errors %}
-                                            <small>{{ error }}</small>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="confirm_password" class="form-label">{{ edit_form.confirm_password.label }}</label>
-                                {{ edit_form.confirm_password(class="form-control", placeholder="Confirm new password") }}
-                                {% if edit_form.confirm_password.errors %}
-                                    <div class="text-danger">
-                                        {% for error in edit_form.confirm_password.errors %}
-                                            <small>{{ error }}</small>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
+                                <label for="access_key" class="form-label">Access Key</label>
+                                <div class="input-group">
+                                    <input type="text" readonly class="form-control" value="{{ user.access_key }}">
+                                    <a href="{{ url_for('regenerate_key', user_id=user.id) }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-key me-1"></i> Regenerate Key
+                                    </a>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i> To change the access key, use the "Regenerate Key" button.
+                                </div>
                             </div>
                             
                             <div class="mb-3">
@@ -263,7 +252,52 @@
                                 <button type="button" class="btn btn-secondary" onclick="document.getElementById('users-tab').click();">
                                     <i class="fas fa-arrow-left me-1"></i> Back to Users
                                 </button>
-                                {{ edit_form.submit(class="btn btn-primary") }}
+                                {{ edit_form.submit(class="btn btn-success") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Regenerate Key Tab -->
+            {% if user and active_tab == 'regenerate' %}
+            <div class="tab-pane fade show active" id="regenerate-content" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-key me-2"></i>Regenerate Access Key for {{ user.name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Warning:</strong> Regenerating the access key will invalidate the current key. The user will need to use the new key to log in.
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('regenerate_key', user_id=user.id) }}">
+                            {{ regenerate_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label for="current_access_key" class="form-label">Current Access Key</label>
+                                <input type="text" readonly class="form-control" value="{{ user.access_key }}">
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                {{ regenerate_form.confirm(class="form-check-input") }}
+                                <label class="form-check-label" for="confirm">{{ regenerate_form.confirm.label }}</label>
+                                {% if regenerate_form.confirm.errors %}
+                                    <div class="text-danger">
+                                        {% for error in regenerate_form.confirm.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="document.getElementById('users-tab').click();">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Users
+                                </button>
+                                {{ regenerate_form.submit(class="btn btn-danger") }}
                             </div>
                         </form>
                     </div>
@@ -276,5 +310,20 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+function toggleAccessKey(keyId) {
+    const keyElement = document.getElementById(keyId);
+    const iconElement = document.getElementById('key-icon-' + keyId.split('-')[1]);
+    
+    if (keyElement.classList.contains('d-none')) {
+        keyElement.classList.remove('d-none');
+        iconElement.classList.remove('fa-eye');
+        iconElement.classList.add('fa-eye-slash');
+    } else {
+        keyElement.classList.add('d-none');
+        iconElement.classList.remove('fa-eye-slash');
+        iconElement.classList.add('fa-eye');
+    }
+}
+</script>
 {% endblock %}
