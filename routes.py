@@ -40,6 +40,8 @@ def login():
                 return redirect(url_for('login'))
                 
             login_user(user, remember=form.remember_me.data)
+            # Record the login time
+            User.record_login(user.id)
             next_page = request.args.get('next')
             
             flash(f'Welcome, {user.name}!', 'success')

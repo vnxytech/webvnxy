@@ -5,6 +5,16 @@
         "access_key": "123456789abcdefg",
         "role": "admin",
         "active": true,
-        "created_at": "2025-05-10T04:42:54.226152"
+        "created_at": "2025-05-10T04:42:54.226152",
+        "last_login": null
+    },
+    {
+        "id": 2,
+        "name": "Regular User",
+        "access_key": "user12345678901",
+        "role": "user",
+        "active": true,
+        "created_at": "2025-05-10T07:40:00.000000",
+        "last_login": null
     }
 ]

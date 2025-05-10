@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import url_for
 
 class User(UserMixin):
-    def __init__(self, id, name, access_key, role="user", active=True, created_at=None):
+    def __init__(self, id, name, access_key, role="user", active=True, created_at=None, last_login=None):
         self.id = id
         self.name = name
         self.access_key = access_key
@@ -15,6 +15,7 @@ class User(UserMixin):
         # Store the active status in a different variable to avoid conflict with UserMixin
         self.is_account_active = active
         self.created_at = created_at or datetime.now().isoformat()
+        self.last_login = last_login
 
     @staticmethod
     def get(user_id):
@@ -27,7 +28,8 @@ class User(UserMixin):
                     access_key=user["access_key"],
                     role=user["role"],
                     active=user.get("active", True),
-                    created_at=user["created_at"]
+                    created_at=user["created_at"],
+                    last_login=user.get("last_login")
                 )
         return None
 
@@ -42,7 +44,8 @@ class User(UserMixin):
                     access_key=user["access_key"],
                     role=user["role"],
                     active=user.get("active", True),
-                    created_at=user["created_at"]
+                    created_at=user["created_at"],
+                    last_login=user.get("last_login")
                 )
         return None
 
@@ -62,7 +65,8 @@ class User(UserMixin):
             "access_key": access_key,
             "role": role,
             "active": active,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
+            "last_login": None
         }
         
         users.append(new_user)
@@ -102,6 +106,16 @@ class User(UserMixin):
                 User.save_users(users)
                 return True
         return False
+        
+    @staticmethod
+    def record_login(user_id):
+        users = User.get_users()
+        for i, user in enumerate(users):
+            if user["id"] == int(user_id):
+                users[i]["last_login"] = datetime.now().isoformat()
+                User.save_users(users)
+                return True
+        return False
 
     @staticmethod
     def get_users():
@@ -133,7 +147,8 @@ class User(UserMixin):
             "access_key": self.access_key,
             "role": self.role,
             "active": self.is_account_active,
-            "created_at": self.created_at
+            "created_at": self.created_at,
+            "last_login": self.last_login
         }
 
 
